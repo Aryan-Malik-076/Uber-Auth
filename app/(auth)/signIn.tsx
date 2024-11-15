@@ -1,36 +1,37 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Image } from 'react-native';
-import { useRouter } from 'expo-router'; // Import the useRouter hook from Expo Router
+import { useRouter } from 'expo-router';
 import { images } from '@/constants';
 import CustomButton from '@/components/CustomButton';
 import OAuth from '@/components/Oauth';
+import { setAuth } from '@/services/auth'; // Import the setAuth function
+import axios from 'axios';
 
-const SignIn: React.FC = () => {
+const SignIn = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
-  const router = useRouter(); // Initialize the router hook
+  const router = useRouter();
 
-  const handleChange = (name: string, value: string) => {
+  const handleChange = (name: any, value: any) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
     try {
-      // Simulate sign-in process
-      if (formData.email === 'user@example.com' && formData.password === 'password123') {
+      const response = await axios.post('http://localhost:5000/api/auth/login'
+, formData);
+      const result = await response.data;
+
+      if (response.data) {
+        await setAuth(result.token); // Store JWT token
         Alert.alert('Success', 'Logged in successfully');
-        // Optionally, navigate to a different screen or store session info
-        router.push('/home'); // Redirect to the home screen after successful login
+        router.push('/home'); // Navigate to the home screen
       } else {
-        Alert.alert('Error', 'Invalid email or password');
+        Alert.alert('Error', result.message || 'Login failed');
       }
     } catch (err) {
-      Alert.alert('Error', 'Login failed. Please check your credentials.');
       console.error(err);
+      Alert.alert('Error', 'Login failed. Please check your credentials.');
     }
-  };
-
-  const onLoginPress = () => {
-    handleSubmit(); // Trigger the login logic
   };
 
   return (
@@ -64,17 +65,14 @@ const SignIn: React.FC = () => {
             />
           </View>
 
-          {/* Custom Log In Button */}
           <CustomButton
             title="Log In"
-            onPress={onLoginPress} // Trigger login when pressed
+            onPress={handleSubmit}
             style={styles.customButton}
           />
 
-          {/* OAuth options (e.g., Google Login) */}
           <OAuth />
 
-          {/* Link to Sign Up */}
           <TouchableOpacity onPress={() => router.push('/signUp')}>
             <Text style={styles.loginText}>
               Don't have an account? <Text style={styles.loginLink}>Sign Up</Text>
@@ -85,7 +83,6 @@ const SignIn: React.FC = () => {
     </ScrollView>
   );
 };
-
 const styles = StyleSheet.create({
   scrollView: {
     flexGrow: 1,
